@@ -28,11 +28,9 @@
     "clsx": "^2.1.1",
     "lowlight": "^3.1.0",
     "lucide-react": "^0.459.0",
-    "quill": "^2.0.2",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-medium-image-zoom": "^5.2.11",
-    "react-quill": "^2.0.0",
     "tailwind-merge": "^2.5.4",
     "tailwindcss-animate": "^1.0.7"
   },
