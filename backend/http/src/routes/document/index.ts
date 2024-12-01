@@ -6,7 +6,7 @@ const documentRouter = express.Router();
 
 documentRouter.post("/create", verifyToken, DocumentController.createDocument);
 
-documentRouter.get("/get", verifyToken, DocumentController.getAllDocuments);
+documentRouter.get("/", verifyToken, DocumentController.getAllDocuments);
 
 documentRouter.get("/:id", verifyToken, DocumentController.getDocument);
 

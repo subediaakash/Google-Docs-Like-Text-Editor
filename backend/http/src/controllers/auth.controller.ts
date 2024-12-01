@@ -4,7 +4,7 @@ import jwt from "jsonwebtoken";
 import { Request, Response } from "express";
 
 const prisma = new PrismaClient();
-const JWT_SECRET = process.env.JWT_SECRET || "thisisasecret";
+const JWT_SECRET = process.env.JWT_SECRET;
 
 export const register = async (req: Request, res: Response): Promise<void> => {
   try {
@@ -31,8 +31,7 @@ export const register = async (req: Request, res: Response): Promise<void> => {
 
     const token = jwt.sign(
       { id: user.id, name: user.name, email: user.email },
-      JWT_SECRET,
-      { expiresIn: "1h" }
+      JWT_SECRET!
     );
 
     res.status(201).json({
@@ -67,8 +66,8 @@ export const login = async (req: Request, res: Response): Promise<void> => {
 
     const token = jwt.sign(
       { id: user.id, name: user.name, email: user.email },
-      JWT_SECRET,
-      { expiresIn: "1h" }
+      JWT_SECRET!,
+      { expiresIn: "24h" }
     );
 
     res.json({

@@ -134,7 +134,7 @@ export class DocumentController {
         where: {
           documentId: id,
           userId: req.user.id,
-          accessType: "edit",
+          accessType: "EDIT",
         },
       });
 

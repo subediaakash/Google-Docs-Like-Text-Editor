@@ -7,6 +7,12 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum AccessType {
+  READ
+  EDIT
+  COMMENT
+}
+
 model User {
   id                  String               @id @default(uuid())
   name                String
@@ -30,10 +36,10 @@ model Document {
 }
 
 model DocumentPermission {
-  id         String   @id @default(uuid())
+  id         String     @id @default(uuid())
   userId     String
   documentId String
-  accessType String // e.g., "read", "edit", "comment"
-  user       User     @relation(fields: [userId], references: [id])
-  document   Document @relation(fields: [documentId], references: [id])
+  accessType AccessType
+  user       User       @relation(fields: [userId], references: [id])
+  document   Document   @relation(fields: [documentId], references: [id])
 }
