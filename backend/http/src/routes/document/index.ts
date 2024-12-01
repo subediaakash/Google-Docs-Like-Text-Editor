@@ -12,4 +12,10 @@ documentRouter.get("/:id", verifyToken, DocumentController.getDocument);
 
 documentRouter.put("/:id", verifyToken, DocumentController.updateDocument);
 
+documentRouter.post(
+  "/permission",
+  verifyToken,
+  DocumentController.givePermission
+);
+
 export default documentRouter;

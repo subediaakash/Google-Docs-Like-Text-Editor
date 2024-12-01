@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from "express";
-import { PrismaClient } from "@prisma/client";
+import { AccessType, PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
@@ -164,6 +164,103 @@ export class DocumentController {
     } catch (error) {
       console.error("Error updating document:", error);
       res.status(500).json({ error: "Failed to update document" });
+    }
+  }
+  static async givePermission(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
+    try {
+      const { documentId, userId, accessType } = req.body;
+      const requesterId = req.user?.id;
+
+      if (!documentId || !userId || !accessType) {
+        res.status(400).json({ error: "Missing required fields" });
+        return;
+      }
+
+      const validAccessTypes: AccessType[] = ["READ", "EDIT", "COMMENT"];
+      if (!validAccessTypes.includes(accessType)) {
+        res.status(400).json({
+          error: "Invalid access type",
+          validTypes: validAccessTypes,
+        });
+        return;
+      }
+
+      const document = await prisma.document.findUnique({
+        where: { id: documentId },
+        include: { sharedWith: true },
+      });
+
+      if (!document) {
+        res.status(404).json({ error: "Document not found" });
+        return;
+      }
+
+      if (document.ownerId !== requesterId) {
+        res
+          .status(403)
+          .json({ error: "Only document owner can assign permissions" });
+        return;
+      }
+
+      const targetUser = await prisma.user.findUnique({
+        where: { id: userId },
+      });
+
+      if (!targetUser) {
+        res.status(404).json({ error: "Target user not found" });
+        return;
+      }
+
+      const isAlreadyShared = document.sharedWith.some(
+        (user) => user.id === userId
+      );
+
+      await prisma.$transaction(async (tx) => {
+        const existingPermission = await tx.documentPermission.findFirst({
+          where: {
+            documentId,
+            userId,
+          },
+        });
+
+        if (existingPermission) {
+          await tx.documentPermission.update({
+            where: { id: existingPermission.id },
+            data: { accessType },
+          });
+        } else {
+          await tx.documentPermission.create({
+            data: {
+              documentId,
+              userId,
+              accessType,
+            },
+          });
+        }
+
+        if (!isAlreadyShared) {
+          await tx.document.update({
+            where: { id: documentId },
+            data: {
+              sharedWith: {
+                connect: { id: userId },
+              },
+            },
+          });
+        }
+      });
+
+      res.status(200).json({
+        message: "Permission successfully assigned",
+        accessType,
+      });
+    } catch (error) {
+      console.error("Permission assignment error:", error);
+      next(error);
     }
   }
 }
