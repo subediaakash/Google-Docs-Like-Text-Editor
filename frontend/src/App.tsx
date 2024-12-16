@@ -1,5 +1,10 @@
+import CollaborativeEditor from "./components/collaborative-editor";
 function App() {
-  return <div>App</div>;
+  return (
+    <div className="App">
+      <CollaborativeEditor />
+    </div>
+  );
 }
 
 export default App;
