@@ -3,19 +3,16 @@ import { DocumentController } from "../../controllers/document.controller";
 import { verifyToken } from "../../middlewares/auth.middleware";
 
 const documentRouter = express.Router();
+documentRouter.use(verifyToken);
 
-documentRouter.post("/create", verifyToken, DocumentController.createDocument);
+documentRouter.post("", DocumentController.createDocument);
 
-documentRouter.get("/", verifyToken, DocumentController.getAllDocuments);
+documentRouter.get("", DocumentController.getAllDocuments);
 
-documentRouter.get("/:id", verifyToken, DocumentController.getDocument);
+documentRouter.get("/:id", DocumentController.getDocument);
 
-documentRouter.put("/:id", verifyToken, DocumentController.updateDocument);
+documentRouter.put("/:id", DocumentController.updateDocument);
 
-documentRouter.post(
-  "/permission",
-  verifyToken,
-  DocumentController.givePermission
-);
+documentRouter.post("/permission", DocumentController.givePermission);
 
 export default documentRouter;

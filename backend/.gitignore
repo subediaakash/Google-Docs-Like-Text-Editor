@@ -2,3 +2,7 @@
 http/node_modules
 
 http/dist
+
+websocket/node_modules
+websocket/dist
+

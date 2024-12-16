@@ -1,13 +1,77 @@
-import { WebSocketServer } from "ws";
+import http from 'http';
+import WebSocket, { WebSocketServer } from 'ws';
+import { nanoid } from 'nanoid';
 
-const wss = new WebSocketServer({ port: 8080 });
+interface Document {
+  content: string;
+  collaborators: Set<WebSocket>;
+}
 
-wss.on("connection", function connection(ws) {
-  ws.on("error", console.error);
+interface MessageData {
+  type: string;
+  docId?: string;
+  content?: string;
+}
 
-  ws.on("message", function message(data) {
-    console.log("received: %s", data);
+const server = http.createServer();
+server.listen(8080, () => {
+  console.log('Server listening on port 8080');
+});
+
+const wss = new WebSocketServer({ server });
+const documents: Map<string, Document> = new Map();
+const connections: Map<WebSocket, { id: string }> = new Map();
+
+wss.on('connection', (ws) => {
+  const clientId = nanoid();
+  connections.set(ws, { id: clientId });
+
+  ws.on('message', (message) => {
+    const data = JSON.parse(message.toString()) as MessageData;
+    switch (data.type) {
+      case 'join':
+        if (data.docId) handleJoin(ws, data.docId);
+        break;
+      case 'update':
+        if (data.docId && data.content) handleUpdate(ws, data.docId, data.content);
+        break;
+      default:
+        console.log('Unknown message type:', data.type);
+    }
   });
 
-  ws.send("something");
+  ws.on('close', () => {
+    connections.delete(ws);
+    documents.forEach((doc) => {
+      doc.collaborators.delete(ws);
+    });
+  });
 });
+
+function handleJoin(ws: WebSocket, docId: string) {
+  if (!documents.has(docId)) {
+    documents.set(docId, { content: '', collaborators: new Set() });
+  }
+  const doc = documents.get(docId)!;
+  doc.collaborators.add(ws);
+  ws.send(
+    JSON.stringify({
+      type: 'init',
+      content: doc.content,
+    })
+  );
+}
+
+function handleUpdate(ws: WebSocket, docId: string, content: string) {
+  if (!documents.has(docId)) return;
+  const doc = documents.get(docId)!;
+  doc.content = content;
+  doc.collaborators.forEach(client => {
+    if (client !== ws && client.readyState === WebSocket.OPEN) {
+      client.send(JSON.stringify({
+        type: "update",
+        content
+      }));
+    }
+  });
+}
