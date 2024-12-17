@@ -5,6 +5,7 @@ import { SignInPage } from "./pages/signIn-page";
 import CollaborativeEditor from "./components/collaborative-editor";
 import GetDocumentsPage from "./pages/hero-document-page";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import GetDocumentById from "./components/get-documentById";
 
 const App: React.FC = () => {
   const queryClient = new QueryClient();
@@ -17,6 +18,7 @@ const App: React.FC = () => {
           <Route path="/signin" element={<SignInPage />} />
           <Route path="/" element={<CollaborativeEditor />} />
           <Route path="/documents" element={<GetDocumentsPage />} />
+          <Route path="/document/:id" element={<GetDocumentById />} />
         </Routes>
       </Router>
     </QueryClientProvider>
