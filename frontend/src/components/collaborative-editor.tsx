@@ -31,7 +31,7 @@ const CollaborativeEditor: React.FC = () => {
   const handleContentChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const newContent = e.target.value;
     setContent(newContent);
-
+    console.log(content)
     websocketRef.current?.send(
       JSON.stringify({
         type: "update",

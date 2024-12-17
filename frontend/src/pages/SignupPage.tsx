@@ -22,7 +22,6 @@ export const SignUpPage: React.FC = () => {
       navigate("/");
     } catch (error) {
       console.error("Signup failed:", error);
-      // Handle error (e.g., show error message to user)
     }
   };
 

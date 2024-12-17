@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
 import { PrismaClient } from "@prisma/client";
-
+import { TokenPayload } from "../utils/types";
 const prisma = new PrismaClient();
 
 declare global {
@@ -13,11 +13,6 @@ declare global {
       };
     }
   }
-}
-
-interface TokenPayload {
-  id?: string;
-  email?: string;
 }
 
 export const verifyToken = async (

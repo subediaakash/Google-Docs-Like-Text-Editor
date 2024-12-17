@@ -1,7 +1,7 @@
 import axios from "axios";
 import { AuthResponse } from "../utils/types";
 
-const API_URL = "http://aile halchu maile ";
+const API_URL = "http://localhost:3000";
 
 export const AuthService = {
   async signUp(
@@ -9,7 +9,7 @@ export const AuthService = {
     email: string,
     password: string
   ): Promise<AuthResponse> {
-    const response = await axios.post(`${API_URL}/signup`, {
+    const response = await axios.post(`${API_URL}/auth/signup`, {
       name,
       email,
       password,
@@ -18,7 +18,10 @@ export const AuthService = {
   },
 
   async signIn(email: string, password: string): Promise<AuthResponse> {
-    const response = await axios.post(`${API_URL}/signin`, { email, password });
+    const response = await axios.post(`${API_URL}/auth/signin`, {
+      email,
+      password,
+    });
     return response.data;
   },
 };
