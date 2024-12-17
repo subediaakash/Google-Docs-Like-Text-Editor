@@ -4,10 +4,6 @@ import { useQuery } from "@tanstack/react-query";
 import DocumentService from "../utils/fetchDocuments";
 import { Document } from "../utils/types";
 
-interface DocumentResponse {
-  data: Document;
-}
-
 const DocumentDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   if (!id) {
