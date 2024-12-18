@@ -6,7 +6,7 @@ import CollaborativeEditor from "./components/collaborative-editor";
 import GetDocumentsPage from "./pages/hero-document-page";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import GetDocumentById from "./components/get-documentById";
-import Tiptap from "./components/TipTap";
+import TextEditor from "./components/editor/text-editor";
 
 const App: React.FC = () => {
   const queryClient = new QueryClient();
@@ -20,7 +20,7 @@ const App: React.FC = () => {
           <Route path="/" element={<CollaborativeEditor />} />
           <Route path="/documents" element={<GetDocumentsPage />} />
           <Route path="/document/:id" element={<GetDocumentById />} />
-          <Route path="/temp" element={<Tiptap />} />
+          <Route path="/texteditor" element={<TextEditor />} />
         </Routes>
       </Router>
     </QueryClientProvider>
