@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import axios from "axios";
 import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
@@ -26,11 +26,25 @@ interface DocumentCreateResponse {
   title: string;
 }
 
+interface SaveStatus {
+  saving: boolean;
+  lastSaved: Date | null;
+  error: string | null;
+}
+
 const NewDocument: React.FC = () => {
   const [socket, setSocket] = useState<WebSocket | null>(null);
   const [docId, setDocId] = useState<string | null>(null);
   const [showTitleModal, setShowTitleModal] = useState(true);
   const [title, setTitle] = useState("");
+  const [saveStatus, setSaveStatus] = useState<SaveStatus>({
+    saving: false,
+    lastSaved: null,
+    error: null,
+  });
+
+  const lastContentRef = useRef<string>(" ");
+  const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const createNewDocument = async () => {
     try {
@@ -54,6 +68,57 @@ const NewDocument: React.FC = () => {
       return null;
     }
   };
+
+  const saveDocument = async (content: string) => {
+    if (!docId) return;
+
+    setSaveStatus((prev) => ({ ...prev, saving: true, error: null }));
+
+    try {
+      await axios.put(
+        `http://localhost:3000/document/${docId}`,
+        {
+          content: content,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token") || ""}`,
+          },
+        }
+      );
+
+      lastContentRef.current = content;
+      setSaveStatus({
+        saving: false,
+        lastSaved: new Date(),
+        error: null,
+      });
+    } catch (error) {
+      console.error("Failed to save document:", error);
+      setSaveStatus((prev) => ({
+        ...prev,
+        saving: false,
+        error: "Failed to save changes",
+      }));
+    }
+  };
+
+  const debouncedSave = useCallback(
+    (content: string) => {
+      // Clear any existing timeout
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current);
+      }
+
+      // Only save if content has changed
+      if (content !== lastContentRef.current) {
+        saveTimeoutRef.current = setTimeout(() => {
+          saveDocument(content);
+        }, 1000); // Save after 1 second of no changes
+      }
+    },
+    [docId]
+  );
 
   const editor = useEditor({
     extensions: [
@@ -86,7 +151,7 @@ const NewDocument: React.FC = () => {
       Color,
       Underline,
     ],
-    content: "<p>Welcome to the multiple collaborative text editor</p>",
+    content: "<p>Welcome to the collaborative text editor</p>",
     onUpdate: ({ editor }) => {
       const contents = editor.getHTML();
 
@@ -99,6 +164,7 @@ const NewDocument: React.FC = () => {
           })
         );
       }
+      debouncedSave(contents);
     },
   });
 
@@ -111,6 +177,9 @@ const NewDocument: React.FC = () => {
           console.error("Failed to create document");
           return;
         }
+
+        // Store initial content
+        lastContentRef.current = editor.getHTML();
 
         const ws = new WebSocket("ws://localhost:8080");
 
@@ -133,6 +202,7 @@ const NewDocument: React.FC = () => {
             case "init":
               if (data.content) {
                 editor.commands.setContent(data.content);
+                lastContentRef.current = data.content;
               }
               break;
             case "update":
@@ -141,6 +211,7 @@ const NewDocument: React.FC = () => {
                 editor.setOptions({ onUpdate: () => {} });
                 editor.commands.setContent(data.content);
                 editor.setOptions({ onUpdate: currentOnUpdate });
+                lastContentRef.current = data.content;
               }
               break;
           }
@@ -160,8 +231,20 @@ const NewDocument: React.FC = () => {
       if (socket) {
         socket.close();
       }
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current);
+      }
     };
   }, [editor, showTitleModal]);
+
+  useEffect(() => {
+    return () => {
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current);
+      }
+    };
+  }, []);
+
   const handleTitleSubmit = (submittedTitle: string) => {
     setTitle(submittedTitle);
     setShowTitleModal(false);
@@ -176,12 +259,47 @@ const NewDocument: React.FC = () => {
       {showTitleModal && <TitleModal onSubmit={handleTitleSubmit} />}
       <div className="max-w-4xl mx-auto">
         <MenuBar editor={editor} />
-        <BubbleMenu editor={editor} children={undefined} />
+        <BubbleMenu editor={editor}>
+          <div className="flex gap-2 bg-white shadow-lg rounded-lg p-2">
+            <button
+              onClick={() => editor.chain().focus().toggleBold().run()}
+              className={`p-2 rounded ${
+                editor.isActive("bold") ? "bg-gray-200" : ""
+              }`}
+            >
+              Bold
+            </button>
+            <button
+              onClick={() => editor.chain().focus().toggleItalic().run()}
+              className={`p-2 rounded ${
+                editor.isActive("italic") ? "bg-gray-200" : ""
+              }`}
+            >
+              Italic
+            </button>
+          </div>
+        </BubbleMenu>
         <div className="bg-white shadow-sm rounded-lg mt-4 p-8">
+          <h1 className="text-2xl font-bold mb-4">{title}</h1>
           <EditorContent
             editor={editor}
             className="prose max-w-none focus:outline-none"
           />
+          <div className="flex justify-between items-center mt-4 text-sm text-gray-500">
+            <div className="flex items-center gap-2">
+              {saveStatus.saving && (
+                <span className="text-yellow-600">Saving...</span>
+              )}
+              {saveStatus.error && (
+                <span className="text-red-600">{saveStatus.error}</span>
+              )}
+              {saveStatus.lastSaved && (
+                <span>
+                  Last saved: {saveStatus.lastSaved.toLocaleTimeString()}
+                </span>
+              )}
+            </div>
+          </div>
         </div>
       </div>
     </div>
