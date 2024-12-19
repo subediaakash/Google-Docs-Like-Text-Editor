@@ -1,10 +1,15 @@
-import React from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useState } from "react";
+import { useNavigate, useLocation, Link } from "react-router-dom";
 import { useForm } from "../hooks/useForm";
 import { AuthService } from "../services/authService";
+import { useAuth } from "../hooks/useAuth";
 
 export const SignInPage: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const { login } = useAuth();
+  const [error, setError] = useState<string>("");
+
   const { formData, handleChange, handleSubmit } = useForm({
     email: "",
     password: "",
@@ -12,11 +17,16 @@ export const SignInPage: React.FC = () => {
 
   const onSubmit = async (data: typeof formData) => {
     try {
+      setError("");
       const response = await AuthService.signIn(data.email, data.password);
-      localStorage.setItem("token", response.token);
-      navigate("/");
+
+      login(response.token);
+
+      const from = location.state?.from?.pathname || "/";
+      navigate(from, { replace: true });
     } catch (error) {
       console.error("Signin failed:", error);
+      setError("Invalid email or password");
     }
   };
 
@@ -27,6 +37,13 @@ export const SignInPage: React.FC = () => {
           <h2 className="text-4xl font-bold text-blue-300 mb-2">Sign In</h2>
           <p className="text-blue-200 text-sm">Welcome back!</p>
         </div>
+
+        {error && (
+          <div className="mb-4 p-2 text-red-300 text-sm text-center bg-red-900/20 rounded">
+            {error}
+          </div>
+        )}
+
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
           <div className="relative">
             <input
@@ -46,6 +63,7 @@ export const SignInPage: React.FC = () => {
               Email
             </label>
           </div>
+
           <div className="relative">
             <input
               type="password"
@@ -64,6 +82,7 @@ export const SignInPage: React.FC = () => {
               Password
             </label>
           </div>
+
           <button
             type="submit"
             className="w-full py-2 px-4 bg-blue-600 hover:bg-blue-700 rounded-lg text-white font-semibold shadow-md hover:shadow-lg transition-all duration-300 transform hover:scale-105"
@@ -71,15 +90,16 @@ export const SignInPage: React.FC = () => {
             Sign In
           </button>
         </form>
+
         <div className="mt-6 text-center">
           <p className="text-blue-200 text-sm">
             Don't have an account?{" "}
-            <a
-              href="/signup"
+            <Link
+              to="/signup"
               className="text-blue-400 hover:text-blue-300 transition-colors duration-300"
             >
               Sign Up
-            </a>
+            </Link>
           </p>
         </div>
       </div>

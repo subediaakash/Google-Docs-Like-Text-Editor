@@ -85,7 +85,9 @@ const DocumentDetail: React.FC = () => {
 
         if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
         debounceTimerRef.current = setTimeout(() => {
-          wsRef.current?.send(JSON.stringify({ type: "update", content }));
+          wsRef.current?.send(
+            JSON.stringify({ type: "update", content, docId: id })
+          );
           mutation.mutate(content);
         }, 500);
       }

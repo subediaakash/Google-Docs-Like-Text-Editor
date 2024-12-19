@@ -21,6 +21,8 @@ import MenuBar from "./editor/menu-bar";
 import { BubbleMenu } from "@tiptap/react";
 import TitleModal from "./editor/title-modal";
 
+// Todo : Redirecting to document page after clicking on new document . This is to remove this page and redundancy
+
 interface DocumentCreateResponse {
   id: string;
   title: string;
