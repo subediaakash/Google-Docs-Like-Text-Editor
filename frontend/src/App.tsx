@@ -7,7 +7,7 @@ import GetDocumentsPage from "./pages/hero-document-page";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import GetDocumentById from "./components/get-documentById";
 import TextEditor from "./components/editor/text-editor";
-
+import NewDocument from "./components/create-new-document.tsx";
 const App: React.FC = () => {
   const queryClient = new QueryClient();
 
@@ -21,6 +21,7 @@ const App: React.FC = () => {
           <Route path="/documents" element={<GetDocumentsPage />} />
           <Route path="/document/:id" element={<GetDocumentById />} />
           <Route path="/texteditor" element={<TextEditor />} />
+          <Route path="/new" element={<NewDocument />} />
         </Routes>
       </Router>
     </QueryClientProvider>
