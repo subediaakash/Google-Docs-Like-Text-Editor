@@ -105,16 +105,14 @@ const NewDocument: React.FC = () => {
 
   const debouncedSave = useCallback(
     (content: string) => {
-      // Clear any existing timeout
       if (saveTimeoutRef.current) {
         clearTimeout(saveTimeoutRef.current);
       }
 
-      // Only save if content has changed
       if (content !== lastContentRef.current) {
         saveTimeoutRef.current = setTimeout(() => {
           saveDocument(content);
-        }, 1000); // Save after 1 second of no changes
+        }, 1000);
       }
     },
     [docId]
@@ -178,7 +176,6 @@ const NewDocument: React.FC = () => {
           return;
         }
 
-        // Store initial content
         lastContentRef.current = editor.getHTML();
 
         const ws = new WebSocket("ws://localhost:8080");

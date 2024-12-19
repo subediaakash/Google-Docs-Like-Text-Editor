@@ -1,6 +1,6 @@
-import React from "react";
+import React, { useEffect, useRef } from "react";
 import { useParams } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import DocumentService from "../utils/fetchDocuments";
 import { Document } from "../utils/types";
 import { useEditor, EditorContent } from "@tiptap/react";
@@ -22,18 +22,37 @@ import Color from "@tiptap/extension-color";
 import Underline from "@tiptap/extension-underline";
 import MenuBar from "./editor/menu-bar";
 import { BubbleMenu } from "@tiptap/react";
+import axios from "axios";
 
 const DocumentDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
+  if (!id) return <>Id not found</>;
 
-  if (!id) {
-    return <>Id not found</>;
-  }
+  const wsRef = useRef<WebSocket | null>(null);
+  const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const lastContentRef = useRef<string>("");
 
   const documentService = new DocumentService("http://localhost:3000/");
+
   const { isLoading, isError, data, error } = useQuery<Document, Error>({
     queryKey: ["document", id],
     queryFn: () => documentService.fetchDocumentById(id),
+  });
+
+  const mutation = useMutation({
+    mutationFn: (content: string) =>
+      axios.put(
+        `http://localhost:3000/document/${id}`,
+        { content },
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token") || ""}`,
+          },
+        }
+      ),
+    onError: (error) => {
+      console.error("Failed to save document:", error);
+    },
   });
 
   const editor = useEditor({
@@ -42,131 +61,84 @@ const DocumentDetail: React.FC = () => {
       Placeholder.configure({
         placeholder: "Start writing something amazing...",
       }),
-      TextAlign.configure({
-        types: ["heading", "paragraph"],
-      }),
+      TextAlign.configure({ types: ["heading", "paragraph"] }),
       Typography,
       Image,
-      Link.configure({
-        openOnClick: false,
-      }),
-      Table.configure({
-        resizable: true,
-      }),
+      Link.configure({ openOnClick: false }),
+      Table.configure({ resizable: true }),
       TableRow,
       TableHeader,
       TableCell,
-      Highlight.configure({
-        multicolor: true,
-      }),
+      Highlight.configure({ multicolor: true }),
       TaskList,
-      TaskItem.configure({
-        nested: true,
-      }),
+      TaskItem.configure({ nested: true }),
       TextStyle,
       Color,
       Underline,
     ],
     content: data?.content || "",
-    editable: true, // Set to false if you want read-only mode
+    editable: true,
+    onUpdate: ({ editor }) => {
+      const content = editor.getHTML();
+      if (content !== lastContentRef.current) {
+        lastContentRef.current = content;
+
+        if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
+        debounceTimerRef.current = setTimeout(() => {
+          wsRef.current?.send(JSON.stringify({ type: "update", content }));
+          mutation.mutate(content);
+        }, 500);
+      }
+    },
   });
 
-  // Update editor content when data is loaded
-  React.useEffect(() => {
+  useEffect(() => {
+    if (editor && data) {
+      wsRef.current = new WebSocket("ws://localhost:8080");
+      wsRef.current.onopen = () => {
+        wsRef.current?.send(JSON.stringify({ type: "join", docId: id }));
+      };
+
+      wsRef.current.onmessage = (event) => {
+        const msg = JSON.parse(event.data);
+        if (msg.type === "update" && msg.content !== lastContentRef.current) {
+          const currentOnUpdate = editor.options.onUpdate;
+          editor.setOptions({ onUpdate: () => {} });
+          editor.commands.setContent(msg.content);
+          editor.setOptions({ onUpdate: currentOnUpdate });
+          lastContentRef.current = msg.content;
+        }
+      };
+
+      wsRef.current.onclose = () => console.log("WebSocket disconnected");
+
+      return () => wsRef.current?.close();
+    }
+  }, [editor, data, id]);
+
+  useEffect(() => {
     if (data?.content && editor) {
       editor.commands.setContent(data.content);
     }
   }, [data, editor]);
 
-  if (isLoading) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100">
-        <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-blue-500 mb-4"></div>
-        <p className="text-gray-600">Loading document...</p>
-      </div>
-    );
-  }
-
-  if (isError) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-screen bg-red-50 p-6">
-        <div className="bg-white shadow-md rounded-lg p-8 text-center max-w-md">
-          <h2 className="text-2xl font-bold text-red-600 mb-4">
-            Error Occurred
-          </h2>
-          <p className="text-gray-700 mb-6">
-            {error?.message || "Failed to fetch document"}
-          </p>
-          <button
-            onClick={() => window.location.reload()}
-            className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors"
-          >
-            Try Again
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  if (!data) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100 p-6">
-        <div className="bg-white shadow-md rounded-lg p-8 text-center max-w-md">
-          <h2 className="text-2xl font-bold text-gray-800 mb-4">
-            Document Not Found
-          </h2>
-          <p className="text-gray-600">
-            The requested document could not be retrieved.
-          </p>
-        </div>
-      </div>
-    );
-  }
-
-  if (!editor) {
-    return null;
-  }
+  if (isLoading) return <p>Loading...</p>;
+  if (isError) return <p>Error: {error?.message}</p>;
+  if (!data || !editor) return null;
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-4xl mx-auto">
-        <div className="bg-white shadow-lg rounded-lg overflow-hidden">
-          <header className="bg-gray-50 border-b border-gray-200 p-6">
-            <h1 className="text-3xl font-bold text-gray-900">{data.title}</h1>
-          </header>
-
-          <div className="p-6">
-            <MenuBar editor={editor} />
-            <BubbleMenu editor={editor}>
-              <div className="flex gap-2 bg-white shadow-lg rounded-lg p-2">
-                <button
-                  onClick={() => editor.chain().focus().toggleBold().run()}
-                  className={`p-2 rounded ${
-                    editor.isActive("bold") ? "bg-gray-200" : ""
-                  }`}
-                >
-                  Bold
-                </button>
-                <button
-                  onClick={() => editor.chain().focus().toggleItalic().run()}
-                  className={`p-2 rounded ${
-                    editor.isActive("italic") ? "bg-gray-200" : ""
-                  }`}
-                >
-                  Italic
-                </button>
-              </div>
-            </BubbleMenu>
-
-            <div className="mt-4">
-              <EditorContent
-                editor={editor}
-                className="prose max-w-none focus:outline-none"
-              />
-            </div>
-          </div>
-        </div>
-      </div>
+    <div>
+      <h1>{data.title}</h1>
+      <MenuBar editor={editor} />
+      <BubbleMenu editor={editor}>
+        <button onClick={() => editor.chain().focus().toggleBold().run()}>
+          Bold
+        </button>
+        <button onClick={() => editor.chain().focus().toggleItalic().run()}>
+          Italic
+        </button>
+      </BubbleMenu>
+      <EditorContent editor={editor} />
     </div>
   );
 };
