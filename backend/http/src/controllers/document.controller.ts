@@ -4,33 +4,45 @@ import { AccessType, PrismaClient } from "@prisma/client";
 const prisma = new PrismaClient();
 
 export class DocumentController {
-  static async createDocument(
-    req: Request,
-    res: Response,
-    next: NextFunction
-  ): Promise<void> {
-    try {
-      if (!req.user) {
-        res.status(401).json({ error: "Unauthorized" });
-        return;
-      }
+static async createDocument(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> {
+  try {
+    if (!req.user) {
+      res.status(401).json({ error: "Unauthorized" });
+      return;
+    }
 
-      const { title, content } = req.body;
+    const { title, content } = req.body;
 
-      const newDocument = await prisma.document.create({
+    const newDocument = await prisma.$transaction(async (tx) => {
+      const document = await tx.document.create({
         data: {
           title,
           content: content || "",
-          ownerId: req.user.id,
+          ownerId: req.user!.id,
         },
       });
 
-      res.status(201).json(newDocument);
-    } catch (error) {
-      console.error("Error creating document:", error);
-      res.status(500).json({ error: "Failed to create document" });
-    }
+      await tx.documentPermission.create({
+        data: {
+          userId: req.user!.id,
+          documentId: document.id,
+          accessType: 'EDIT',
+        },
+      });
+
+      return document;
+    });
+
+    res.status(201).json(newDocument);
+  } catch (error) {
+    console.error("Error creating document:", error);
+    res.status(500).json({ error: "Failed to create document" });
   }
+}
 
   static async getAllDocuments(
     req: Request,
@@ -128,7 +140,7 @@ export class DocumentController {
       }
 
       const { id } = req.params;
-      const { title, content } = req.body;
+      const {  content } = req.body;
 
       const existingDocument = await prisma.documentPermission.findFirst({
         where: {
@@ -155,7 +167,6 @@ export class DocumentController {
       const updatedDocument = await prisma.document.update({
         where: { id },
         data: {
-          title,
           content,
         },
       });
@@ -174,6 +185,7 @@ export class DocumentController {
     try {
       const { documentId, userId, accessType } = req.body;
       const requesterId = req.user?.id;
+      console.log(documentId,userId,accessType)
 
       if (!documentId || !userId || !accessType) {
         res.status(400).json({ error: "Missing required fields" });
