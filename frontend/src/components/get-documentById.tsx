@@ -23,6 +23,7 @@ import Underline from "@tiptap/extension-underline";
 import MenuBar from "./editor/menu-bar";
 import { BubbleMenu } from "@tiptap/react";
 import axios from "axios";
+import styles from "./editor/editorStyle";
 
 const DocumentDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -95,6 +96,16 @@ const DocumentDetail: React.FC = () => {
   });
 
   useEffect(() => {
+    const styleElement = document.createElement("style");
+    styleElement.textContent = styles;
+    document.head.appendChild(styleElement);
+
+    return () => {
+      styleElement.remove();
+    };
+  }, []);
+
+  useEffect(() => {
     if (editor && data) {
       wsRef.current = new WebSocket("ws://localhost:8080");
       wsRef.current.onopen = () => {
@@ -124,23 +135,39 @@ const DocumentDetail: React.FC = () => {
     }
   }, [data, editor]);
 
-  if (isLoading) return <p>Loading...</p>;
-  if (isError) return <p>Error: {error?.message}</p>;
+  if (isLoading)
+    return (
+      <div className="editor-container flex items-center justify-center">
+        Loading...
+      </div>
+    );
+  if (isError)
+    return (
+      <div className="editor-container flex items-center justify-center">
+        Error: {error?.message}
+      </div>
+    );
   if (!data || !editor) return null;
 
   return (
-    <div>
-      <h1>{data.title}</h1>
-      <MenuBar editor={editor} />
-      <BubbleMenu editor={editor}>
-        <button onClick={() => editor.chain().focus().toggleBold().run()}>
-          Bold
-        </button>
-        <button onClick={() => editor.chain().focus().toggleItalic().run()}>
-          Italic
-        </button>
-      </BubbleMenu>
-      <EditorContent editor={editor} />
+    <div className="editor-container">
+      <div className="editor-header">
+        <h1 className="document-title">{data.title}</h1>
+      </div>
+      <div className="menu-bar-container">
+        <MenuBar editor={editor} />
+      </div>
+      <div className="editor-content-container">
+        <BubbleMenu editor={editor} className="bubble-menu">
+          <button onClick={() => editor.chain().focus().toggleBold().run()}>
+            Bold
+          </button>
+          <button onClick={() => editor.chain().focus().toggleItalic().run()}>
+            Italic
+          </button>
+        </BubbleMenu>
+        <EditorContent editor={editor} />
+      </div>
     </div>
   );
 };

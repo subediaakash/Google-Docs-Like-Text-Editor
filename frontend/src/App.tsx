@@ -11,7 +11,6 @@ import CollaborativeEditor from "./components/collaborative-editor";
 import GetDocumentsPage from "./pages/hero-document-page";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import GetDocumentById from "./components/get-documentById";
-import TextEditor from "./components/editor/text-editor";
 import NewDocument from "./components/create-new-document";
 import { ProtectedRoute } from "./components/protected-route";
 
@@ -49,14 +48,7 @@ const App: React.FC = () => {
               </ProtectedRoute>
             }
           />
-          <Route
-            path="/texteditor"
-            element={
-              <ProtectedRoute>
-                <TextEditor />
-              </ProtectedRoute>
-            }
-          />
+
           <Route
             path="/new"
             element={
