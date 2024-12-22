@@ -4,45 +4,45 @@ import { AccessType, PrismaClient } from "@prisma/client";
 const prisma = new PrismaClient();
 
 export class DocumentController {
-static async createDocument(
-  req: Request,
-  res: Response,
-  next: NextFunction
-): Promise<void> {
-  try {
-    if (!req.user) {
-      res.status(401).json({ error: "Unauthorized" });
-      return;
+  static async createDocument(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
+    try {
+      if (!req.user) {
+        res.status(401).json({ error: "Unauthorized" });
+        return;
+      }
+
+      const { title, content } = req.body;
+
+      const newDocument = await prisma.$transaction(async (tx) => {
+        const document = await tx.document.create({
+          data: {
+            title,
+            content: content || "",
+            ownerId: req.user!.id,
+          },
+        });
+
+        await tx.documentPermission.create({
+          data: {
+            userId: req.user!.id,
+            documentId: document.id,
+            accessType: "EDIT",
+          },
+        });
+
+        return document;
+      });
+
+      res.status(201).json(newDocument);
+    } catch (error) {
+      console.error("Error creating document:", error);
+      res.status(500).json({ error: "Failed to create document" });
     }
-
-    const { title, content } = req.body;
-
-    const newDocument = await prisma.$transaction(async (tx) => {
-      const document = await tx.document.create({
-        data: {
-          title,
-          content: content || "",
-          ownerId: req.user!.id,
-        },
-      });
-
-      await tx.documentPermission.create({
-        data: {
-          userId: req.user!.id,
-          documentId: document.id,
-          accessType: 'EDIT',
-        },
-      });
-
-      return document;
-    });
-
-    res.status(201).json(newDocument);
-  } catch (error) {
-    console.error("Error creating document:", error);
-    res.status(500).json({ error: "Failed to create document" });
   }
-}
 
   static async getAllDocuments(
     req: Request,
@@ -117,7 +117,9 @@ static async createDocument(
       });
 
       if (!document) {
-        res.status(403).json({ error: "Document not found or access denied" });
+        res.status(403).json({
+          error: "Document not found or access denied",
+        });
         return;
       }
 
@@ -140,7 +142,7 @@ static async createDocument(
       }
 
       const { id } = req.params;
-      const {  content } = req.body;
+      const { content } = req.body;
 
       const existingDocument = await prisma.documentPermission.findFirst({
         where: {
@@ -185,7 +187,7 @@ static async createDocument(
     try {
       const { documentId, userId, accessType } = req.body;
       const requesterId = req.user?.id;
-      console.log(documentId,userId,accessType)
+      console.log(documentId, userId, accessType);
 
       if (!documentId || !userId || !accessType) {
         res.status(400).json({ error: "Missing required fields" });
