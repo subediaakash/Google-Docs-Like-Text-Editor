@@ -13,6 +13,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import GetDocumentById from "./components/get-documentById";
 import NewDocument from "./components/create-new-document";
 import { ProtectedRoute } from "./components/protected-route";
+import DocumentPermissionForm from "./components/give-permission";
 
 const App: React.FC = () => {
   const queryClient = new QueryClient();
@@ -54,6 +55,15 @@ const App: React.FC = () => {
             element={
               <ProtectedRoute>
                 <NewDocument />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/share"
+            element={
+              <ProtectedRoute>
+                <DocumentPermissionForm />
               </ProtectedRoute>
             }
           />
