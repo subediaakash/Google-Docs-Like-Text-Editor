@@ -25,3 +25,7 @@ userRouter.get("", async (req, res) => {
 });
 
 export default userRouter;
+
+// todo : show the profile to  the user
+// todo : update the profile of the user
+// todo  : delete the profile of the user

@@ -17,6 +17,7 @@ import {
   SelectValue,
 } from "../components/ui/select";
 import { Button } from "../components/ui/button";
+import axios from "axios";
 
 interface FormData {
   documentId: string;
@@ -38,6 +39,7 @@ const DocumentPermissionForm = () => {
   const [documents, setDocuments] = useState<Document[]>([]);
   const [users, setUsers] = useState<User[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const { formData, handleSubmit } = useForm<FormData>({
     documentId: "",
@@ -48,17 +50,35 @@ const DocumentPermissionForm = () => {
   useEffect(() => {
     const fetchData = async () => {
       setIsLoading(true);
-      try {
-        const documentsResponse = await fetch("/api/documents");
-        const usersResponse = await fetch("/api/users");
+      setError(null);
 
-        const documentsData = await documentsResponse.json();
-        const usersData = await usersResponse.json();
+      try {
+        const [documentsResponse, usersResponse] = await Promise.all([
+          axios.get("http://localhost:3000/document", {
+            headers: {
+              Authorization: `Bearer ${localStorage.getItem("token")}`,
+            },
+          }),
+          axios.get("http://localhost:3000/users", {
+            headers: {
+              Authorization: `Bearer ${localStorage.getItem("token")}`,
+            },
+          }),
+        ]);
+
+        const documentsData = documentsResponse.data;
+        const usersData = usersResponse.data;
+
+        // Validate responses
+        if (!Array.isArray(documentsData) || !Array.isArray(usersData)) {
+          throw new Error("Invalid response data structure");
+        }
 
         setDocuments(documentsData);
         setUsers(usersData);
-      } catch (error) {
-        console.error("Error fetching data:", error);
+      } catch (err) {
+        setError("Failed to fetch documents or users. Please try again.");
+        console.error("Error fetching data:", err);
       } finally {
         setIsLoading(false);
       }
@@ -68,6 +88,9 @@ const DocumentPermissionForm = () => {
   }, []);
 
   const onSubmit = async (data: FormData) => {
+    setError(null);
+    setIsLoading(true);
+
     try {
       const response = await fetch("/api/permissions", {
         method: "POST",
@@ -77,11 +100,16 @@ const DocumentPermissionForm = () => {
         body: JSON.stringify(data),
       });
 
-      if (response.ok) {
-        console.log("Permission updated successfully");
+      if (!response.ok) {
+        throw new Error("Failed to update permissions");
       }
-    } catch (error) {
-      console.error("Error updating permission:", error);
+
+      console.log("Permission updated successfully");
+    } catch (err) {
+      setError("Error updating permission. Please try again.");
+      console.error("Error updating permission:", err);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -90,10 +118,15 @@ const DocumentPermissionForm = () => {
       <CardHeader>
         <CardTitle>Document Permissions</CardTitle>
         <CardDescription>
-          Assign view or edit permissions to users for specific documents
+          Assign view or edit permissions to users for specific documents.
         </CardDescription>
       </CardHeader>
       <CardContent>
+        {error && (
+          <div className="text-red-600 bg-red-100 p-2 rounded mb-4">
+            {error}
+          </div>
+        )}
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
           <div className="space-y-2">
             <Label htmlFor="document">Document</Label>
