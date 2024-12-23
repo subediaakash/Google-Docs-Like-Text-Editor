@@ -1,13 +1,41 @@
 import React, { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { FileText, Users, Folder, LogOut, Menu, X, User } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "../components/ui/alert-dialog";
 
-const Navbar: React.FC = () => {
+const Navbar = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
+  const [showLogoutDialog, setShowLogoutDialog] = useState(false);
+  const navigate = useNavigate();
 
   const toggleMobileMenu = () => setIsMobileMenuOpen(!isMobileMenuOpen);
   const toggleUserMenu = () => setIsUserMenuOpen(!isUserMenuOpen);
+
+  const handleProfileClick = () => {
+    setIsUserMenuOpen(false);
+    navigate("/profile");
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem("token");
+    navigate("/signin");
+  };
+
+  const handleLogoutClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    setIsUserMenuOpen(false);
+    setShowLogoutDialog(true);
+  };
 
   return (
     <nav className="bg-white border-b border-gray-200 transition-colors duration-200">
@@ -52,18 +80,18 @@ const Navbar: React.FC = () => {
                 </button>
                 {isUserMenuOpen && (
                   <div className="origin-top-right absolute right-0 mt-2 w-48 rounded-md shadow-lg py-1 bg-white ring-1 ring-black ring-opacity-5 focus:outline-none">
-                    <Link
-                      to="/profile"
-                      className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                    <button
+                      onClick={handleProfileClick}
+                      className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                     >
                       Profile
-                    </Link>
-                    <Link
-                      to="/logout"
-                      className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                    </button>
+                    <button
+                      onClick={handleLogoutClick}
+                      className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                     >
                       Logout
-                    </Link>
+                    </button>
                   </div>
                 )}
               </div>
@@ -106,21 +134,38 @@ const Navbar: React.FC = () => {
             >
               My Documents
             </MobileNavLink>
-            <MobileNavLink
-              to="/profile"
-              icon={<User className="w-5 h-5 mr-1.5" />}
+            <button
+              onClick={handleProfileClick}
+              className="w-full text-left text-gray-600 hover:bg-gray-100 hover:text-gray-900 px-3 py-2 rounded-md text-base font-medium flex items-center transition-colors duration-200"
             >
+              <User className="w-5 h-5 mr-1.5" />
               Profile
-            </MobileNavLink>
-            <MobileNavLink
-              to="/logout"
-              icon={<LogOut className="w-5 h-5 mr-1.5" />}
+            </button>
+            <button
+              onClick={handleLogoutClick}
+              className="w-full text-left text-gray-600 hover:bg-gray-100 hover:text-gray-900 px-3 py-2 rounded-md text-base font-medium flex items-center transition-colors duration-200"
             >
+              <LogOut className="w-5 h-5 mr-1.5" />
               Logout
-            </MobileNavLink>
+            </button>
           </div>
         </div>
       )}
+
+      <AlertDialog open={showLogoutDialog} onOpenChange={setShowLogoutDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirm Logout</AlertDialogTitle>
+            <AlertDialogDescription>
+              Do you really want to logout?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleLogout}>Logout</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </nav>
   );
 };
@@ -144,7 +189,7 @@ const NavLink: React.FC<NavLinkProps> = ({ to, children, icon }) => (
 const MobileNavLink: React.FC<NavLinkProps> = ({ to, children, icon }) => (
   <Link
     to={to}
-    className="text-gray-600 hover:bg-gray-100 hover:text-gray-900  px-3 py-2 rounded-md text-base font-medium flex items-center transition-colors duration-200"
+    className="text-gray-600 hover:bg-gray-100 hover:text-gray-900 px-3 py-2 rounded-md text-base font-medium flex items-center transition-colors duration-200"
   >
     {icon}
     {children}
