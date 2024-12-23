@@ -10,6 +10,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@radix-ui/react-avatar": "^1.1.2",
     "@radix-ui/react-dialog": "^1.1.4",
     "@radix-ui/react-label": "^2.1.1",
     "@radix-ui/react-radio-group": "^1.2.2",
@@ -43,10 +44,12 @@
     "date-fns": "^4.1.0",
     "jwt-decode": "^4.0.0",
     "lucide-react": "^0.468.0",
+    "next-themes": "^0.4.4",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-router-dom": "^7.0.2",
     "recoil": "^0.7.7",
+    "sonner": "^1.7.1",
     "tailwind-merge": "^2.5.5",
     "tailwindcss-animate": "^1.0.7"
   },

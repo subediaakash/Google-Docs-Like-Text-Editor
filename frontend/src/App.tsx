@@ -11,9 +11,9 @@ import { SharedDocumentsContent } from "./pages/shared-documents";
 import GetDocumentsPage from "./pages/hero-document-page";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import GetDocumentById from "./components/get-documentById";
-import NewDocument from "./components/create-new-document";
 import { ProtectedRoute } from "./components/protected-route";
 import DocumentPermissionForm from "./components/give-permission";
+import UserProfile from "./components/user-profile";
 
 const App: React.FC = () => {
   const queryClient = new QueryClient();
@@ -58,12 +58,20 @@ const App: React.FC = () => {
               </ProtectedRoute>
             }
           />
-
           <Route
-            path="/new"
+            path="/shared-documents"
             element={
               <ProtectedRoute>
-                <NewDocument />
+                <SharedDocumentsContent />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/profile"
+            element={
+              <ProtectedRoute>
+                <UserProfile />
               </ProtectedRoute>
             }
           />

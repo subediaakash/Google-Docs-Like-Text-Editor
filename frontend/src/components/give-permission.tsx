@@ -18,6 +18,7 @@ import {
 import { Button } from "../components/ui/button";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
+import { Toaster, toast } from "sonner";
 
 interface FormData {
   documentId: string;
@@ -39,7 +40,6 @@ const DocumentPermissionForm = () => {
   const [documents, setDocuments] = useState<Document[]>([]);
   const [users, setUsers] = useState<User[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
 
   const [formData, setFormData] = useState<FormData>({
@@ -51,7 +51,6 @@ const DocumentPermissionForm = () => {
   useEffect(() => {
     const fetchData = async () => {
       setIsLoading(true);
-      setError(null);
 
       try {
         const [documentsResponse, usersResponse] = await Promise.all([
@@ -70,7 +69,7 @@ const DocumentPermissionForm = () => {
         setDocuments(documentsResponse.data as Document[]);
         setUsers(usersResponse.data as User[]);
       } catch (err) {
-        setError("Failed to fetch documents or users. Please try again.");
+        toast.error("Failed to fetch documents or users. Please try again.");
         console.error("Error fetching data:", err);
       } finally {
         setIsLoading(false);
@@ -89,7 +88,6 @@ const DocumentPermissionForm = () => {
 
   const onSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
-    setError(null);
     setIsLoading(true);
 
     try {
@@ -108,10 +106,13 @@ const DocumentPermissionForm = () => {
       if (!response.ok) {
         throw new Error("Failed to update permissions");
       }
-      navigate("/documents");
-      console.log("Permission updated successfully");
+
+      toast.success("Permission updated successfully!");
+      setTimeout(() => {
+        navigate("/documents");
+      }, 1000);
     } catch (err) {
-      setError("Error updating permission. Please try again.");
+      toast.error("Error updating permission. Please try again.");
       console.error("Error updating permission:", err);
     } finally {
       setIsLoading(false);
@@ -119,84 +120,82 @@ const DocumentPermissionForm = () => {
   };
 
   return (
-    <Card className="w-full max-w-md mx-auto mt-6">
-      <CardHeader>
-        <CardTitle>Document Permissions</CardTitle>
-        <CardDescription>
-          Assign view or edit permissions to users for specific documents.
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        {error && (
-          <div className="text-red-600 bg-red-100 p-2 rounded mb-4">
-            {error}
-          </div>
-        )}
-        <form onSubmit={onSubmit} className="space-y-6">
-          <div className="space-y-2">
-            <Label htmlFor="document">Document</Label>
-            <Select
-              onValueChange={(value) => handleChange("documentId", value)}
-              defaultValue={formData.documentId}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Select a document" />
-              </SelectTrigger>
-              <SelectContent>
-                {documents.map((doc) => (
-                  <SelectItem key={doc.id} value={doc.id}>
-                    {doc.title}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+    <div>
+      <Toaster position="top-right" richColors />
+      <Card className="w-full max-w-md mx-auto mt-6">
+        <CardHeader>
+          <CardTitle>Document Permissions</CardTitle>
+          <CardDescription>
+            Assign view or edit permissions to users for specific documents.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={onSubmit} className="space-y-6">
+            <div className="space-y-2">
+              <Label htmlFor="document">Document</Label>
+              <Select
+                onValueChange={(value) => handleChange("documentId", value)}
+                defaultValue={formData.documentId}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select a document" />
+                </SelectTrigger>
+                <SelectContent>
+                  {documents.map((doc) => (
+                    <SelectItem key={doc.id} value={doc.id}>
+                      {doc.title}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="user">User</Label>
-            <Select
-              onValueChange={(value) => handleChange("userId", value)}
-              defaultValue={formData.userId}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Select a user" />
-              </SelectTrigger>
-              <SelectContent>
-                {users.map((user) => (
-                  <SelectItem key={user.id} value={user.id}>
-                    {user.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+            <div className="space-y-2">
+              <Label htmlFor="user">User</Label>
+              <Select
+                onValueChange={(value) => handleChange("userId", value)}
+                defaultValue={formData.userId}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select a user" />
+                </SelectTrigger>
+                <SelectContent>
+                  {users.map((user) => (
+                    <SelectItem key={user.id} value={user.id}>
+                      {user.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
 
-          <div className="space-y-2">
-            <Label>Permission Type</Label>
-            <RadioGroup
-              defaultValue={formData.accessType}
-              onValueChange={(value) =>
-                handleChange("accessType", value as "EDIT" | "VIEW")
-              }
-              className="flex space-x-4"
-            >
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="VIEW" id="view" />
-                <Label htmlFor="view">View</Label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="EDIT" id="edit" />
-                <Label htmlFor="edit">Edit</Label>
-              </div>
-            </RadioGroup>
-          </div>
+            <div className="space-y-2">
+              <Label>Permission Type</Label>
+              <RadioGroup
+                defaultValue={formData.accessType}
+                onValueChange={(value) =>
+                  handleChange("accessType", value as "EDIT" | "VIEW")
+                }
+                className="flex space-x-4"
+              >
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="VIEW" id="view" />
+                  <Label htmlFor="view">View</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="EDIT" id="edit" />
+                  <Label htmlFor="edit">Edit</Label>
+                </div>
+              </RadioGroup>
+            </div>
 
-          <Button type="submit" className="w-full" disabled={isLoading}>
-            {isLoading ? "Loading..." : "Update Permission"}
-          </Button>
-        </form>
-      </CardContent>
-    </Card>
+            <Button type="submit" className="w-full" disabled={isLoading}>
+              {isLoading ? "Loading..." : "Update Permission"}
+            </Button>
+          </form>
+        </CardContent>
+      </Card>
+    </div>
   );
 };
 
