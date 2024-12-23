@@ -277,4 +277,77 @@ export class DocumentController {
       next(error);
     }
   }
+  static getSharedDocumentsByOtherUsers = async (req: Request, res: Response) => {
+    try {
+      const userId = req.user?.id;
+
+      if (!userId) {
+        return res.status(401).json({
+          success: false,
+          message: "User not authenticated",
+        });
+      }
+
+      const sharedDocuments = await prisma.document.findMany({
+        // Here i want to  get documents where the owner is NOT the current user
+        where: {
+          AND: [
+            { NOT: { ownerId: userId } },
+            {
+              // Here i did this because i wanted to check weather the user is having the permission or not
+              DocumentPermission: {
+                some: {
+                  userId: userId,
+                },
+              },
+            },
+          ],
+        },
+        // Here i am including the owner of the document and the DocumentPermission
+        include: {
+          owner: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+            },
+          },
+          DocumentPermission: {
+            where: {
+              userId: userId,
+            },
+            select: {
+              accessType: true,
+            },
+          },
+        },
+      });
+
+      const formattedDocuments = sharedDocuments.map((doc) => ({
+        id: doc.id,
+        title: doc.title,
+        content: doc.content,
+        createdAt: doc.createdAt,
+        updatedAt: doc.updatedAt,
+        owner: {
+          id: doc.owner.id,
+          name: doc.owner.name,
+          email: doc.owner.email,
+        },
+        accessType: doc.DocumentPermission[0]?.accessType,
+      }));
+
+      return res.status(200).json({
+        success: true,
+        data: formattedDocuments,
+      });
+    } catch (error: any) {
+      console.error("Error fetching shared documents:", error);
+      return res.status(500).json({
+        success: false,
+        message: "Internal server error",
+        error: error.message,
+      });
+    }
+  };
 }

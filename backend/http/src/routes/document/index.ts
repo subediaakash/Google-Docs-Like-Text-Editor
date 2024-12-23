@@ -8,6 +8,10 @@ documentRouter.use(verifyToken);
 documentRouter.post("", DocumentController.createDocument);
 
 documentRouter.get("", DocumentController.getAllDocuments);
+documentRouter.get(
+  "/shared",
+  DocumentController.getSharedDocumentsByOtherUsers
+);
 
 documentRouter.get("/:id", DocumentController.getDocument);
 
