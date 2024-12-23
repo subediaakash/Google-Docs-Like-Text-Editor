@@ -1,6 +1,7 @@
 import express from "express";
 import { verifyToken } from "../../middlewares/auth.middleware";
 import { PrismaClient } from "@prisma/client";
+import { UserController } from "../../controllers/user.controller";
 const prisma = new PrismaClient();
 
 const userRouter = express.Router();
@@ -27,5 +28,6 @@ userRouter.get("", async (req, res) => {
 export default userRouter;
 
 // todo : show the profile to  the user
+userRouter.get("/profile", UserController.getUserInfo);
 // todo : update the profile of the user
 // todo  : delete the profile of the user
