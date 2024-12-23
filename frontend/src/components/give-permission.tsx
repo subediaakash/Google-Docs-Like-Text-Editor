@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import { useForm } from "../hooks/useForm";
 import {
   Card,
   CardContent,
@@ -22,7 +21,7 @@ import axios from "axios";
 interface FormData {
   documentId: string;
   userId: string;
-  permissionType: "EDIT" | "VIEW";
+  accessType: "EDIT" | "VIEW";
 }
 
 interface Document {
@@ -41,10 +40,10 @@ const DocumentPermissionForm = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const { formData, handleSubmit } = useForm<FormData>({
+  const [formData, setFormData] = useState<FormData>({
     documentId: "",
     userId: "",
-    permissionType: "VIEW",
+    accessType: "EDIT",
   });
 
   useEffect(() => {
@@ -66,16 +65,8 @@ const DocumentPermissionForm = () => {
           }),
         ]);
 
-        const documentsData = documentsResponse.data;
-        const usersData = usersResponse.data;
-
-        // Validate responses
-        if (!Array.isArray(documentsData) || !Array.isArray(usersData)) {
-          throw new Error("Invalid response data structure");
-        }
-
-        setDocuments(documentsData);
-        setUsers(usersData);
+        setDocuments(documentsResponse.data as Document[]);
+        setUsers(usersResponse.data as User[]);
       } catch (err) {
         setError("Failed to fetch documents or users. Please try again.");
         console.error("Error fetching data:", err);
@@ -87,18 +78,30 @@ const DocumentPermissionForm = () => {
     fetchData();
   }, []);
 
-  const onSubmit = async (data: FormData) => {
+  const handleChange = (field: keyof FormData, value: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      [field]: value,
+    }));
+  };
+
+  const onSubmit = async (event: React.FormEvent) => {
+    event.preventDefault();
     setError(null);
     setIsLoading(true);
 
     try {
-      const response = await fetch("/api/permissions", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(data),
-      });
+      const response = await fetch(
+        "http://localhost:3000/document/permission",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+          body: JSON.stringify(formData),
+        }
+      );
 
       if (!response.ok) {
         throw new Error("Failed to update permissions");
@@ -127,13 +130,11 @@ const DocumentPermissionForm = () => {
             {error}
           </div>
         )}
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+        <form onSubmit={onSubmit} className="space-y-6">
           <div className="space-y-2">
             <Label htmlFor="document">Document</Label>
             <Select
-              onValueChange={(value) => {
-                formData.documentId = value;
-              }}
+              onValueChange={(value) => handleChange("documentId", value)}
               defaultValue={formData.documentId}
             >
               <SelectTrigger>
@@ -152,9 +153,7 @@ const DocumentPermissionForm = () => {
           <div className="space-y-2">
             <Label htmlFor="user">User</Label>
             <Select
-              onValueChange={(value) => {
-                formData.userId = value;
-              }}
+              onValueChange={(value) => handleChange("userId", value)}
               defaultValue={formData.userId}
             >
               <SelectTrigger>
@@ -173,10 +172,10 @@ const DocumentPermissionForm = () => {
           <div className="space-y-2">
             <Label>Permission Type</Label>
             <RadioGroup
-              defaultValue={formData.permissionType}
-              onValueChange={(value) => {
-                formData.permissionType = value as "EDIT" | "VIEW";
-              }}
+              defaultValue={formData.accessType}
+              onValueChange={(value) =>
+                handleChange("accessType", value as "EDIT" | "VIEW")
+              }
               className="flex space-x-4"
             >
               <div className="flex items-center space-x-2">
