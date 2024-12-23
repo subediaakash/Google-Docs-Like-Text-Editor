@@ -109,8 +109,7 @@ export default function GetDocuments() {
   };
 
   const shareDocument = () => {
-    // Implement share functionality here
-    console.log("Share document functionality to be implemented");
+    navigate("/share");
   };
 
   if (isLoading) {

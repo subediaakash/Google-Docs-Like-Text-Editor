@@ -17,6 +17,7 @@ import {
 } from "../components/ui/select";
 import { Button } from "../components/ui/button";
 import axios from "axios";
+import { useNavigate } from "react-router-dom";
 
 interface FormData {
   documentId: string;
@@ -39,6 +40,7 @@ const DocumentPermissionForm = () => {
   const [users, setUsers] = useState<User[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const navigate = useNavigate();
 
   const [formData, setFormData] = useState<FormData>({
     documentId: "",
@@ -106,7 +108,7 @@ const DocumentPermissionForm = () => {
       if (!response.ok) {
         throw new Error("Failed to update permissions");
       }
-
+      navigate("/documents");
       console.log("Permission updated successfully");
     } catch (err) {
       setError("Error updating permission. Please try again.");

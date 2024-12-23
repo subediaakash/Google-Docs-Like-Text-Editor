@@ -26,7 +26,7 @@ const Navbar: React.FC = () => {
                   File
                 </NavLink>
                 <NavLink
-                  to="/shared"
+                  to="/shared-documents"
                   icon={<Users className="w-5 h-5 mr-1.5" />}
                 >
                   Shared
@@ -95,7 +95,7 @@ const Navbar: React.FC = () => {
               File
             </MobileNavLink>
             <MobileNavLink
-              to="/shared"
+              to="/shared-documents"
               icon={<Users className="w-5 h-5 mr-1.5" />}
             >
               Shared Documents

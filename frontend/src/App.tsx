@@ -7,7 +7,7 @@ import {
 } from "react-router-dom";
 import { SignUpPage } from "./pages/signup-page";
 import { SignInPage } from "./pages/signIn-page";
-import CollaborativeEditor from "./components/collaborative-editor";
+import { SharedDocumentsContent } from "./pages/shared-documents";
 import GetDocumentsPage from "./pages/hero-document-page";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import GetDocumentById from "./components/get-documentById";
@@ -29,7 +29,7 @@ const App: React.FC = () => {
             path="/"
             element={
               <ProtectedRoute>
-                <CollaborativeEditor />
+                <GetDocumentsPage />
               </ProtectedRoute>
             }
           />
@@ -46,6 +46,15 @@ const App: React.FC = () => {
             element={
               <ProtectedRoute>
                 <GetDocumentById />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/shared-documents"
+            element={
+              <ProtectedRoute>
+                <SharedDocumentsContent />
               </ProtectedRoute>
             }
           />
