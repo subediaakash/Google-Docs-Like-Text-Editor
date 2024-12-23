@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import DocumentService from "../utils/fetchDocuments";
@@ -32,6 +32,10 @@ const DocumentDetail: React.FC = () => {
   const wsRef = useRef<WebSocket | null>(null);
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
   const lastContentRef = useRef<string>("");
+  const [lastSaved, setLastSaved] = useState<Date | null>(null);
+  const [saveStatus, setSaveStatus] = useState<"saved" | "saving" | "error">(
+    "saved"
+  );
 
   const documentService = new DocumentService("http://localhost:3000/");
 
@@ -51,10 +55,28 @@ const DocumentDetail: React.FC = () => {
           },
         }
       ),
+    onSuccess: () => {
+      setLastSaved(new Date());
+      setSaveStatus("saved");
+    },
     onError: (error) => {
       console.error("Failed to save document:", error);
+      setSaveStatus("error");
     },
   });
+
+  const formatLastSaved = (date: Date | null) => {
+    if (!date) return "";
+
+    const now = new Date();
+    const diff = Math.floor((now.getTime() - date.getTime()) / 1000);
+
+    if (diff < 5) return "Just now";
+    if (diff < 60) return `${diff} seconds ago`;
+    if (diff < 3600) return `${Math.floor(diff / 60)} minutes ago`;
+    if (diff < 86400) return `${Math.floor(diff / 3600)} hours ago`;
+    return date.toLocaleDateString();
+  };
 
   const editor = useEditor({
     extensions: [
@@ -83,6 +105,7 @@ const DocumentDetail: React.FC = () => {
       const content = editor.getHTML();
       if (content !== lastContentRef.current) {
         lastContentRef.current = content;
+        setSaveStatus("saving");
 
         if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
         debounceTimerRef.current = setTimeout(() => {
@@ -120,6 +143,7 @@ const DocumentDetail: React.FC = () => {
           editor.commands.setContent(msg.content);
           editor.setOptions({ onUpdate: currentOnUpdate });
           lastContentRef.current = msg.content;
+          setLastSaved(new Date());
         }
       };
 
@@ -132,6 +156,7 @@ const DocumentDetail: React.FC = () => {
   useEffect(() => {
     if (data?.content && editor) {
       editor.commands.setContent(data.content);
+      setLastSaved(new Date(data.updatedAt));
     }
   }, [data, editor]);
 
@@ -151,8 +176,21 @@ const DocumentDetail: React.FC = () => {
 
   return (
     <div className="editor-container">
-      <div className="editor-header">
+      <div className="editor-header ">
         <h1 className="document-title">{data.title}</h1>
+        <div className="save-status px-3">
+          {saveStatus === "saving" && (
+            <span className="text-gray-500">Saving...</span>
+          )}
+          {saveStatus === "saved" && lastSaved && (
+            <span className="text-slate-600 font-base text-sm">
+              Last saved: {formatLastSaved(lastSaved)}
+            </span>
+          )}
+          {saveStatus === "error" && (
+            <span className="text-red-500">Failed to save</span>
+          )}
+        </div>
       </div>
       <div className="menu-bar-container">
         <MenuBar editor={editor} />

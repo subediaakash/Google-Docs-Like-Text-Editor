@@ -14,7 +14,7 @@ const styles = `
     border-bottom: 1px solid #e5e7eb;
     background-color: #f9fafb;
     display: flex;
-    justify-content: center;
+    justify-content: space-between;
     
     align-items: center;
   }
