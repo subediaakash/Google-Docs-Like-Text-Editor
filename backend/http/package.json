@@ -38,6 +38,7 @@
     "dev": "nodemon --watch src --exec ts-node src/index.ts",
     "postinstall": "prisma generate",
     "prisma:docker": "npm run prisma:migrate ",
+    "prisma:migrate": " npx prisma migrate dev",
     "dev:docker": "npm run prisma:docker & npm run dev"
   },
   "keywords": [],
