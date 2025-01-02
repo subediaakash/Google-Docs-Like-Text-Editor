@@ -35,7 +35,10 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "node dist/index.js",
     "build": "tsc -b ",
-    "dev": "nodemon --watch src --exec ts-node src/index.ts"
+    "dev": "nodemon --watch src --exec ts-node src/index.ts",
+    "postinstall": "prisma generate",
+    "prisma:docker": "npm run prisma:migrate ",
+    "dev:docker": "npm run prisma:docker & npm run dev"
   },
   "keywords": [],
   "author": "",
